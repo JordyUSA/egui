@@ -23,6 +23,8 @@ struct SurfaceState {
     resizing: bool,
     needs_reconfigure: bool,
     needs_recreate: bool,
+    /// [`crate::hdr_metadata`] generation last attached to this surface's swapchain.
+    hdr_metadata_generation: u64,
 }
 
 /// The size to configure a window's surface at, and the factor egui
@@ -226,6 +228,8 @@ impl Painter {
         surface_state
             .surface
             .configure(&render_state.device, &surf_config);
+        // a new swapchain starts without HDR metadata
+        crate::hdr_metadata::apply(&surface_state.surface, &render_state.device, render_state.target_format);
     }
 
     /// Drop the existing [`wgpu::Surface`] for `viewport_id` and create a fresh one for the
@@ -413,6 +417,7 @@ impl Painter {
                 resizing,
                 needs_reconfigure: false,
                 needs_recreate: false,
+                hdr_metadata_generation: u64::MAX,
             },
         );
         let Some(width) = NonZeroU32::new(width) else {
@@ -670,6 +675,12 @@ impl Painter {
         let Some(surface_state) = self.surfaces.get_mut(&viewport_id) else {
             return vsync_sec;
         };
+
+        let hdr_metadata_generation = crate::hdr_metadata::generation();
+        if surface_state.hdr_metadata_generation != hdr_metadata_generation {
+            surface_state.hdr_metadata_generation = hdr_metadata_generation;
+            crate::hdr_metadata::apply(&surface_state.surface, &render_state.device, render_state.target_format);
+        }
 
         let mut encoder =
             render_state

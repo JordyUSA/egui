@@ -1334,6 +1334,7 @@ name = "egui-wgpu"
 version = "0.37.0"
 dependencies = [
  "ahash",
+ "ash",
  "bytemuck",
  "document-features",
  "egui",

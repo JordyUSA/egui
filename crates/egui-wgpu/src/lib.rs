@@ -33,6 +33,9 @@ pub use setup::{
 #[cfg(feature = "capture")]
 pub mod capture;
 
+pub mod hdr_metadata;
+pub use hdr_metadata::{HdrMetadata, set_hdr_metadata};
+
 /// Module for painting [`egui`](https://github.com/emilk/egui) with [`wgpu`] on [`winit`].
 #[cfg(feature = "winit")]
 pub mod winit;
@@ -255,9 +258,19 @@ impl RenderState {
 
                 let (device, queue) = {
                     profiling::scope!("request_device");
-                    adapter
-                        .request_device(&(*device_descriptor)(&adapter))
-                        .await?
+                    let desc = (*device_descriptor)(&adapter);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let hdr_device = if config.prefer_hdr {
+                        crate::hdr_metadata::request_device(&adapter, &desc)
+                    } else {
+                        None
+                    };
+                    #[cfg(target_arch = "wasm32")]
+                    let hdr_device = None;
+                    match hdr_device {
+                        Some(device) => device?,
+                        None => adapter.request_device(&desc).await?,
+                    }
                 };
 
                 (instance.clone(), adapter, device, queue)
