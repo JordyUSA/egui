@@ -51,6 +51,10 @@ x11 = ["winit?/x11"]
 ## Thus that usage is guarded against with compiler errors in wgpu.
 fragile-send-sync-non-atomic-wasm = ["wgpu/fragile-send-sync-non-atomic-wasm"]
 
+## Send HDR metadata (`VK_EXT_hdr_metadata`) with HDR surfaces on Vulkan, so compositors don't
+## clip scRGB content at SDR white. See [`hdr_metadata`](crate::hdr_metadata).
+hdr-metadata = ["dep:ash", "wgpu/vulkan"]
+
 ## Enables the macOS live-resize jitter fix, which uses `present_with_transaction`.
 ## This requires the `wgpu/metal` backend. Disable this feature if you want to use egui-wgpu
 ## with a different backend (e.g. Vulkan or GL) on macOS without pulling in Metal.
@@ -71,5 +75,6 @@ wgpu = { workspace = true, features = ["wgsl"] }
 
 # Optional dependencies:
 
+ash = { version = "0.38", optional = true, default-features = false }
 egui = { workspace = true, optional = true, default-features = false }
 winit = { workspace = true, optional = true, default-features = false }
